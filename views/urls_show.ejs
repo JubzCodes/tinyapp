@@ -18,9 +18,16 @@
       <p class="card-text">Short URL: <a href="/u/<%= shortURL %>">
           <%= shortURL %>
         </a></p>
-    </div>
+      </div>
+        <div class="card text-center">
+          <div class="card-header"></div>
+          <div class="card-body">
+              <h5 class="card-title">Edit
+              </h5>
+              <form method="POST" action='/urls/<%= shortURL %>/edit'><p class="card-text">New URL: <input name="longURL" placeholder="<%= longURL %>"><button type="submit">Submit</button>
+                </a></p></form>
+        </div>
     <div class="card-footer text-muted"></div>
-  </div>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
     integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
