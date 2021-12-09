@@ -116,7 +116,7 @@ app.post("/register", (req, res) => {
   const user = findUserByEmail(email, users);
 
   if (user) {
-    res.status(403).send('Sorry, user already exists!');
+    res.status(400).send('400 - Sorry, user already exists!');
     return;
   }
 
