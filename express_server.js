@@ -40,9 +40,9 @@ res.render("urls_new", templateVars);
 
 app.post("/urls/:shortURL/edit", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.longUR
+  urlDatabase[shortURL] = req.body.longURL
   res.redirect(`/urls`); 
-})
+});
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
@@ -64,6 +64,10 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+app.get("/register", (req, res) => {
+  res.render("register");
+})
+
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
@@ -81,6 +85,7 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username")
   res.redirect("/urls");
 })
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
