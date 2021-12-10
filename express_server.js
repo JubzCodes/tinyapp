@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080; 
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -38,7 +38,7 @@ const generateRandomString = function() {
 
 const findUserByEmail = (email, users) => {
   for (let userId in users) {
-    const user = users[userId]; // => retrieve the value
+    const user = users[userId];
 
     if (user.email === email) {
       return user;
@@ -48,7 +48,20 @@ const findUserByEmail = (email, users) => {
   return false;
 };
 
+const authenticateUser = (email, password, db) => {
 
+  console.log({email,password})
+
+  const user = findUserByEmail(email, db);
+
+  console.log({user});
+
+  if (user && user.password === password) {
+    return user;
+  }
+
+  return false;
+};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -71,8 +84,7 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
-  const templateVars = {
-  username: req.cookies["username"], user: users[userId] };
+  const templateVars = { user: users[userId] };
 res.render("urls_new", templateVars);
 });
 
@@ -130,21 +142,39 @@ app.post("/register", (req, res) => {
   res.redirect("/urls" );
 });
 
+app.get('/login', (req, res) => {
+  const templateVars = { user: null };
+  res.render('login', templateVars);
+});
+
+app.post('/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = authenticateUser(email, password, users);
+  if (user) {
+    res.cookie('user_id', user.id);
+    res.redirect('/urls');
+    return;
+  }
+  res.status(401).send('401 - wrong credentials!');
+});
+
+
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  //const templateVars = { shortURL: shortURL, longURL: longURL };
-  const templateVars = { shortURL, longURL, username: req.cookies["username"] };
+  const userId = req.cookies["user_id"];
+  const templateVars = { shortURL, longURL, user: users[userId]};
   res.render("urls_show", templateVars);
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  res.cookie("user_id", req.body.user.id);
   res.redirect("/urls");
 })
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username")
+  res.clearCookie("user_id")
   res.redirect("/urls");
 })
 
