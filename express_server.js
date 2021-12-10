@@ -126,26 +126,32 @@ app.get('/login', (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
   const userId = req.cookies["user_id"];
-  const templateVars = { shortURL, longURL, user: users[userId]};
+  // const shortURL = req.params.shortURL;
+  // const longURL = urlDatabase[shortURL];
+  // const userId = req.cookies["user_id"];
+  const templateVars = { 
+    shortURL:req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL].longURL, 
+    user: users[userId]};
   res.render("urls_show", templateVars);
 });
 
 
 app.post("/urls/:shortURL/edit", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.longURL
+  urlDatabase[shortURL].longURL = req.body.longURL
   res.redirect(`/urls`); 
 });
 
 
 app.post("/urls", (req, res) => {
+  const userId = req.cookies.user_id;
+  const longURL = req.body.longURL;
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: longURL,
-    userID: users[user_id]
+    userID: users[userId]
   }
   res.redirect(`/urls`);
 });
@@ -208,4 +214,5 @@ app.post("/logout", (req, res) => {
 
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}
+  console.log(`Example app listening on port ${PORT}!`);
+});
