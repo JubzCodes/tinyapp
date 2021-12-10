@@ -97,21 +97,27 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
-  if (userId) {
-    const templateVars = { user: users[userId] };
-    res.render("urls_new", templateVars);
-  } else {
-    res.send("Must Have An Account To Make Tiny URLS!");
-  }
+    if (!userId) {
+      res.redirect("/login");
+      return;
+    } else {
+      const templateVars = { 
+      shortURL:req.params.shortURL, 
+      longURL: urlDatabase[req.params.shortURL], 
+      user: users[userId]};
+      res.render("urls_new", templateVars);
+    }
 });
 
 
 app.get("/u/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  const URLObject = urlDatabase[req.params.shortURL];
+  console.log("URLOb+++++++", URLObject)
+  if (!URLObject) {
+    return res.status(404).send("Error: 404 - Request page not found \nShortURL does not exist");
+  }
+  res.redirect(URLObject.longURL);
 });
-
 
 app.get("/register", (req, res) => {
   const templateVars = { user: null };
@@ -133,8 +139,10 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
     shortURL:req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL, 
-    user: users[userId]};
-  res.render("urls_show", templateVars);
+    user: users[userId]
+  };
+  console.log("templatevarrs-------", templateVars)
+  return res.render("urls_show", templateVars);
 });
 
 
@@ -153,7 +161,7 @@ app.post("/urls", (req, res) => {
     longURL: longURL,
     userID: users[userId]
   }
-  res.redirect(`/urls`);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 
