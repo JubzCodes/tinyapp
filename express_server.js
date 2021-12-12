@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; 
+const bcrypt = require('bcryptjs');
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -59,8 +60,8 @@ const findUserByEmail = (email, users) => {
 
 const authenticateUser = (email, password, db) => {
   const user = findUserByEmail(email, db);
-
-  if (user && user.password === password) {
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  if (user && bcrypt.compareSync(password, hashedPassword)) {
     return user;
   }
 
@@ -201,7 +202,7 @@ app.post("/register", (req, res) => {
   const userId = Math.random().toString(36).substring(2, 8)
   const email = req.body.email;
   const password = req.body.password;
-  
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const user = findUserByEmail(email, users);
 
   if (user) {
@@ -212,7 +213,7 @@ app.post("/register", (req, res) => {
   const newUser = {
     id: userId, 
     email, 
-    password,
+    password: hashedPassword,
   }
   users[userId] = newUser;
   res.cookie("user_id", userId)
