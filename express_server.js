@@ -166,10 +166,17 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 
-app.post("/urls/:shortURL/edit", (req, res) => {
+app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL].longURL = req.body.longURL
-  res.redirect(`/urls`); 
+  const longURL = req.body.longURL;
+  const userId = req.cookies["user_id"];
+
+  if (userId === urlDatabase[req.params.shortURL].userID) {
+    urlDatabase[shortURL].longURL = req.body.longURL
+    res.redirect(`/urls`); 
+  } else { 
+    res.status(401).send("401- Authorized users can only edit their own urls!")
+  }
 });
 
 
@@ -189,11 +196,12 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies["user_id"];
- // if short url belongs to user delete,redirect to /urls
- // ! error message 
-  if (shortURL)
-  delete urlDatabase[shortURL];
-  res.redirect("/urls");
+ if (userId === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[shortURL];
+    res.redirect(`/urls`); 
+  } else { 
+    res.status(401).send("401- Authorized users can only delete their own urls!")
+  }
 });
 
 
