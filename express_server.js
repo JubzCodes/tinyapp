@@ -18,10 +18,6 @@ const urlDatabase = {
     }
 };
 
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com",
-// };
 
 const users = { 
   "userRandomID": {
@@ -72,6 +68,27 @@ const authenticateUser = (email, password, db) => {
 };
 
 
+// const urlsForUser = (id) => {
+//   if (res.cookies("user_id") === id) {
+//     for (const value in urlDatabase) {
+//       if (urlDatabase[value].userID === id) {
+//         return urlDatabase[value];
+//       }
+//     }
+//   }
+// };
+
+const urlsForUser = (id) => {
+  const urls = {};
+  for (let shortURLs in urlDatabase) {
+    if (urlDatabase[shortURLs].userID === id) {
+      urls[shortURLs] = urlDatabase[shortURLs];
+    }
+  }
+  return urls;
+}
+
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -88,10 +105,18 @@ app.get("/hello", (req, res) => {
 
 
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]]
-  const templateVars = { urls: urlDatabase,
-  user };
-  res.render("urls_index", templateVars);
+  const userId = req.cookies["user_id"];
+  console.log("user id:", userId);
+  console.log(urlsForUser(userId));
+  console.log("users:", users)
+  console.log("database", urlDatabase)
+  if(!userId) {
+    res.redirect("/login");
+  } else  {
+    const templateVars = { urls: urlsForUser(userId),
+    user: users[userId] };
+    res.render("urls_index", templateVars);
+  }
 });
 
 
@@ -99,7 +124,6 @@ app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
     if (!userId) {
       res.redirect("/login");
-      return;
     } else {
       const templateVars = { 
       shortURL:req.params.shortURL, 
@@ -111,12 +135,11 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get("/u/:shortURL", (req, res) => {
-  const URLObject = urlDatabase[req.params.shortURL];
-  console.log("URLOb+++++++", URLObject)
-  if (!URLObject) {
+  const URLObj = urlDatabase[req.params.shortURL];
+  if (!URLObj) {
     return res.status(404).send("Error: 404 - Request page not found \nShortURL does not exist");
   }
-  res.redirect(URLObject.longURL);
+  res.redirect(URLObj.longURL);
 });
 
 app.get("/register", (req, res) => {
@@ -133,15 +156,11 @@ app.get('/login', (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.cookies["user_id"];
-  // const shortURL = req.params.shortURL;
-  // const longURL = urlDatabase[shortURL];
-  // const userId = req.cookies["user_id"];
   const templateVars = { 
     shortURL:req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL, 
     user: users[userId]
   };
-  console.log("templatevarrs-------", templateVars)
   return res.render("urls_show", templateVars);
 });
 
@@ -159,14 +178,19 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: longURL,
-    userID: users[userId]
+    userID: userId
   }
+
   res.redirect(`/urls/${shortURL}`);
 });
 
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
+  const userId = req.cookies["user_id"];
+ // if short url belongs to user delete,redirect to /urls
+ // ! error message 
+  if (shortURL)
   delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
