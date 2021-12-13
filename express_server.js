@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; 
+const PORT = 8080;
+const { generateRandomString, findUserByEmail, authenticateUser, urlsForUser } = require('./helpers');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
 const cookieParser = require("cookie-parser");
@@ -38,62 +39,6 @@ const users = {
 };
 
 
-const generateRandomString = function() {
-  let randomString = "";
-  for (let i = 0; i < 6; i++) {
-    const randomCharCode = Math.floor(Math.random() * 26 + 97);
-    const randomChar = String.fromCharCode(randomCharCode);
-    randomString += randomChar;
-  }
-  return randomString;
-};
-
-
-const findUserByEmail = (email, users) => {
-  for (let userId in users) {
-    const user = users[userId];
-
-    if (user.email === email) {
-      return user;
-    }
-  }
-
-  return false;
-};
-
-
-const authenticateUser = (email, password, db) => {
-  const user = findUserByEmail(email, db);
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  if (user && bcrypt.compareSync(password, hashedPassword)) {
-    return user;
-  }
-
-  return false;
-};
-
-
-// const urlsForUser = (id) => {
-//   if (res.cookies("user_id") === id) {
-//     for (const value in urlDatabase) {
-//       if (urlDatabase[value].userID === id) {
-//         return urlDatabase[value];
-//       }
-//     }
-//   }
-// };
-
-const urlsForUser = (id) => {
-  const urls = {};
-  for (let shortURLs in urlDatabase) {
-    if (urlDatabase[shortURLs].userID === id) {
-      urls[shortURLs] = urlDatabase[shortURLs];
-    }
-  }
-  return urls;
-}
-
-
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -111,14 +56,10 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
-  console.log("user id:", userId);
-  console.log(urlsForUser(userId));
-  console.log("users:", users)
-  console.log("database", urlDatabase)
   if(!userId) {
     res.redirect("/login");
   } else  {
-    const templateVars = { urls: urlsForUser(userId),
+    const templateVars = { urls: urlsForUser(userId, urlDatabase),
     user: users[userId] };
     res.render("urls_index", templateVars);
   }
@@ -130,9 +71,9 @@ app.get("/urls/new", (req, res) => {
     if (!userId) {
       res.redirect("/login");
     } else {
-      const templateVars = { 
-      shortURL:req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL], 
+      const templateVars = {
+      shortURL:req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL],
       user: users[userId]};
       res.render("urls_new", templateVars);
     }
@@ -152,21 +93,39 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
+// app.get("/register", (req, res) => {
+//   const userId = req.session.user_id;
+//   const templateVars = { user: users[userId] };
+//   res.render("register", templateVars);
+// });
 
 app.get('/login', (req, res) => {
   const templateVars = { user: null };
   res.render('login', templateVars);
 });
 
+// app.get("/login", (req, res) => {
+//   const userId = req.session.user_id;
+//   const templateVars = { user: users[userId] };
+//   res.render("login", templateVars);
+// });
+
 
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
-  const templateVars = { 
-    shortURL:req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL].longURL, 
+  const shortURL = req.params.shortURL;
+  const templateVars = {
+    shortURL,
+    longURL: urlDatabase[shortURL].longURL,
     user: users[userId]
   };
-  return res.render("urls_show", templateVars);
+  res.render("urls_show", templateVars);
+  
+// if (userId === urlDatabase[shortURL].userID) {
+//   } else {
+//     res.status(401).send("401- Authorized users can only edit their own urls!")
+//   }
+
 });
 
 
@@ -174,11 +133,12 @@ app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
   const userId = req.session.user_id;
-
-  if (userId === urlDatabase[req.params.shortURL].userID) {
+  //console.log(userId);
+  //console.log(urlDatabase[req.params.shortURL].userID);
+  if (userId === urlDatabase[shortURL].userID) {
     urlDatabase[shortURL].longURL = req.body.longURL
-    res.redirect(`/urls`); 
-  } else { 
+    return res.redirect(`/urls`);
+  } else {
     res.status(401).send("401- Authorized users can only edit their own urls!")
   }
 });
@@ -202,15 +162,14 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session.user_id;
  if (userId === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[shortURL];
-    res.redirect(`/urls`); 
-  } else { 
+    res.redirect(`/urls`);
+  } else {
     res.status(401).send("401- Authorized users can only delete their own urls!")
   }
 });
 
 
 app.post("/register", (req, res) => {
-
   const userId = Math.random().toString(36).substring(2, 8)
   const email = req.body.email;
   const password = req.body.password;
@@ -223,8 +182,8 @@ app.post("/register", (req, res) => {
   }
 
   const newUser = {
-    id: userId, 
-    email, 
+    id: userId,
+    email,
     password: hashedPassword,
   }
   users[userId] = newUser;
@@ -244,12 +203,6 @@ app.post('/login', (req, res) => {
   }
   res.status(401).send('401 - wrong credentials!');
 });
-
-
-// app.post("/login", (req, res) => {
-//   res.cookie("user_id", req.body.user.id);
-//   res.redirect("/urls");
-// })
 
 
 app.post("/logout", (req, res) => {
