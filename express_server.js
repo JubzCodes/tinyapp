@@ -114,18 +114,14 @@ app.get('/login', (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
+  console.log(shortURL);
+  console.log("database:", urlDatabase)
   const templateVars = {
     shortURL,
     longURL: urlDatabase[shortURL].longURL,
     user: users[userId]
   };
   res.render("urls_show", templateVars);
-  
-// if (userId === urlDatabase[shortURL].userID) {
-//   } else {
-//     res.status(401).send("401- Authorized users can only edit their own urls!")
-//   }
-
 });
 
 
@@ -133,8 +129,6 @@ app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
   const userId = req.session.user_id;
-  //console.log(userId);
-  //console.log(urlDatabase[req.params.shortURL].userID);
   if (userId === urlDatabase[shortURL].userID) {
     urlDatabase[shortURL].longURL = req.body.longURL
     return res.redirect(`/urls`);
@@ -145,7 +139,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
@@ -160,7 +154,7 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   const userId = req.session.user_id;
- if (userId === urlDatabase[req.params.shortURL].userID) {
+ if (userId === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
     res.redirect(`/urls`);
   } else {
@@ -196,6 +190,7 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = authenticateUser(email, password, users);
+  console.log("user:", user);
   if (user) {
     req.session["user_id"] = user.id;
     res.redirect('/urls');
