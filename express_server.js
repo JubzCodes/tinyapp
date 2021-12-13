@@ -118,7 +118,7 @@ app.post("/urls/:id", (req, res) => {
     urlDatabase[shortURL].longURL = req.body.longURL
     return res.redirect(`/urls`);
   } else {
-    res.status(401).send("401- Authorized users can only edit their own urls!")
+    res.status(401).send("Error : 401- Authorized users can only edit their own urls!")
   }
 });
 
@@ -141,7 +141,7 @@ app.post("/urls/:id/delete", (req, res) => {
     delete urlDatabase[shortURL];
     res.redirect(`/urls`);
   } else {
-    res.status(401).send("401- Authorized users can only delete their own urls!")
+    res.status(401).send("Error : 401- Authorized users can only delete their own urls!")
   }
 });
 
@@ -154,7 +154,7 @@ app.post("/register", (req, res) => {
   const user = findUserByEmail(email, users);
 
   if (user) {
-    res.status(400).send('400 - Sorry, user already exists!');
+    res.status(400).send('Error : 400 - Sorry, user already exists!');
     return;
   }
   const newUser = {
@@ -177,7 +177,7 @@ app.post('/login', (req, res) => {
     res.redirect('/urls');
     return;
   }
-  res.status(401).send('401 - wrong credentials!');
+  res.status(401).send('Error : 401 - Wrong credentials!. Email or Password Do Not Match');
 });
 
 
