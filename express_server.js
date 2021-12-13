@@ -110,7 +110,7 @@ app.get("/hello", (req, res) => {
 
 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   console.log("user id:", userId);
   console.log(urlsForUser(userId));
   console.log("users:", users)
@@ -126,7 +126,7 @@ app.get("/urls", (req, res) => {
 
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
     if (!userId) {
       res.redirect("/login");
     } else {
@@ -160,7 +160,7 @@ app.get('/login', (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const templateVars = { 
     shortURL:req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL, 
@@ -173,7 +173,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
 
   if (userId === urlDatabase[req.params.shortURL].userID) {
     urlDatabase[shortURL].longURL = req.body.longURL
@@ -199,7 +199,7 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
  if (userId === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[shortURL];
     res.redirect(`/urls`); 
@@ -228,7 +228,7 @@ app.post("/register", (req, res) => {
     password: hashedPassword,
   }
   users[userId] = newUser;
-  res.cookie("user_id", userId)
+  req.session["user_id"] = userId;
   res.redirect("/urls" );
 });
 
@@ -238,7 +238,7 @@ app.post('/login', (req, res) => {
   const password = req.body.password;
   const user = authenticateUser(email, password, users);
   if (user) {
-    res.cookie('user_id', user.id);
+    req.session["user_id"] = user.id;
     res.redirect('/urls');
     return;
   }
@@ -246,14 +246,14 @@ app.post('/login', (req, res) => {
 });
 
 
-app.post("/login", (req, res) => {
-  res.cookie("user_id", req.body.user.id);
-  res.redirect("/urls");
-})
+// app.post("/login", (req, res) => {
+//   res.cookie("user_id", req.body.user.id);
+//   res.redirect("/urls");
+// })
 
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id")
+  req.session = null;
   res.redirect("/urls");
 })
 
