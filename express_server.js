@@ -1,11 +1,15 @@
+// Requires---------------------------------------------------------------
 const express = require("express");
-const app = express();
-const PORT = 8080;
-const { generateRandomString, findUserByEmail, authenticateUser, urlsForUser } = require('./helpers');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
+const { generateRandomString, findUserByEmail, authenticateUser, urlsForUser } = require('./helpers');
+
+const app = express();
+const PORT = 8080;
+
+// App.uses---------------------------------------------------------------
 app.use(cookieSession({
   name: 'session',
   keys: ["keys1"]}));
@@ -13,6 +17,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
+// Client information---------------------------------------------------------------
 const urlDatabase = {
     b6UTxQ: {
         longURL: "https://www.tsn.ca",
@@ -23,7 +28,6 @@ const urlDatabase = {
         userID: "aJ48lW"
     }
 };
-
 
 const users = { 
   "userRandomID": {
@@ -38,21 +42,18 @@ const users = {
   }
 };
 
-
+// app.get routes---------------------------------------------------------------
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
-
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
-
 
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
@@ -64,7 +65,6 @@ app.get("/urls", (req, res) => {
     res.render("urls_index", templateVars);
   }
 });
-
 
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
@@ -79,32 +79,17 @@ app.get("/urls/new", (req, res) => {
     }
 });
 
-
-app.get("/u/:shortURL", (req, res) => {
-  const URLObj = urlDatabase[req.params.shortURL];
+app.get("/u/:id", (req, res) => {
+  const URLObj = urlDatabase[req.params.id];
   if (!URLObj) {
     return res.status(404).send("Error: 404 - Request page not found \nShortURL does not exist");
   }
   res.redirect(URLObj.longURL);
 });
 
-app.get("/register", (req, res) => {
-  const templateVars = { user: null };
-  res.render("register", templateVars);
-});
-
-
-app.get('/login', (req, res) => {
-  const templateVars = { user: null };
-  res.render('login', templateVars);
-});
-
-
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
-  console.log(shortURL);
-  console.log("database:", urlDatabase)
   const templateVars = {
     shortURL,
     longURL: urlDatabase[shortURL].longURL,
@@ -113,7 +98,18 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// app.get routes (register/login-----------------------------------------------------
+app.get("/register", (req, res) => {
+  const templateVars = { user: null };
+  res.render("register", templateVars);
+});
 
+app.get('/login', (req, res) => {
+  const templateVars = { user: null };
+  res.render('login', templateVars);
+});
+
+// app.post routes---------------------------------------------------------------
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = req.body.longURL;
@@ -125,7 +121,6 @@ app.post("/urls/:id", (req, res) => {
     res.status(401).send("401- Authorized users can only edit their own urls!")
   }
 });
-
 
 app.post("/urls", (req, res) => {
   const userId = req.session.user_id;
@@ -139,7 +134,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-
 app.post("/urls/:id/delete", (req, res) => {
   const shortURL = req.params.id;
   const userId = req.session.user_id;
@@ -151,7 +145,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
-
+// app.get register/login/logout------------------------------------------------------
 app.post("/register", (req, res) => {
   const userId = Math.random().toString(36).substring(2, 8)
   const email = req.body.email;
@@ -163,7 +157,6 @@ app.post("/register", (req, res) => {
     res.status(400).send('400 - Sorry, user already exists!');
     return;
   }
-
   const newUser = {
     id: userId,
     email,
@@ -179,7 +172,6 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = authenticateUser(email, password, users);
-  console.log("user:", user);
   if (user) {
     req.session["user_id"] = user.id;
     res.redirect('/urls');
@@ -194,7 +186,7 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 })
 
-
+// app.listen route---------------------------------------------------------------
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
