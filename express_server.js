@@ -93,27 +93,16 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
-// app.get("/register", (req, res) => {
-//   const userId = req.session.user_id;
-//   const templateVars = { user: users[userId] };
-//   res.render("register", templateVars);
-// });
 
 app.get('/login', (req, res) => {
   const templateVars = { user: null };
   res.render('login', templateVars);
 });
 
-// app.get("/login", (req, res) => {
-//   const userId = req.session.user_id;
-//   const templateVars = { user: users[userId] };
-//   res.render("login", templateVars);
-// });
 
-
-app.get("/urls/:shortURL", (req, res) => {
+app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
-  const shortURL = req.params.shortURL;
+  const shortURL = req.params.id;
   console.log(shortURL);
   console.log("database:", urlDatabase)
   const templateVars = {
@@ -125,8 +114,8 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 
-app.post("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id;
   const longURL = req.body.longURL;
   const userId = req.session.user_id;
   if (userId === urlDatabase[shortURL].userID) {
@@ -151,8 +140,8 @@ app.post("/urls", (req, res) => {
 });
 
 
-app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
+app.post("/urls/:id/delete", (req, res) => {
+  const shortURL = req.params.id;
   const userId = req.session.user_id;
  if (userId === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
