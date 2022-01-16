@@ -44,7 +44,11 @@ const users = {
 
 // app.get routes---------------------------------------------------------------
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userId = req.session.user_id;
+  if (users[userId]) {
+    return res.redirect("/urls");
+  }
+  res.redirect("/login");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -57,20 +61,20 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
-  if(!userId) {
-    res.redirect("/login");
-  } else  {
+  if(users[userId] === undefined) {
+    return res.status(404).send("Error: 403 - Request page not found \nYou need to log in!");
+  }
     const templateVars = { urls: urlsForUser(userId, urlDatabase),
     user: users[userId] };
     res.render("urls_index", templateVars);
-  }
 });
 
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
-    if (!userId) {
-      res.redirect("/login");
-    } else {
+  if(users[userId] === undefined) {
+    return res.status(404).send("Error: 403 - Request page not found \nYou need to log in!");
+  }
+    else {
       const templateVars = {
       shortURL:req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL],
@@ -90,11 +94,23 @@ app.get("/u/:id", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.id;
+  const URLObj = urlDatabase[req.params.id];
+  if (URLObj === undefined) {
+    return res.status(404).send("Error: 404 - Request page not found \nShortURL does not exist");
+  }
+  const userUrl = urlDatabase[shortURL].userID;
   const templateVars = {
     shortURL,
     longURL: urlDatabase[shortURL].longURL,
     user: users[userId]
   };
+  if (users[userId] === undefined) {
+    return res.status(404).send("Error: 403 - Request page not found \nYou need to log in!");
+  }
+  
+  if (userId !== userUrl) {
+    return res.status(404).send("Error: 401 - Request page not found \nShort URL Already owned!");
+  }
   res.render("urls_show", templateVars);
 });
 
@@ -152,7 +168,11 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
   const user = findUserByEmail(email, users);
-
+  req.session["user_id"] = userId;
+  if (email.length === 0 || password.length === 0) {
+    res.status(400).send('Error : 400 - Email or Password is empty!');
+    return;
+  }
   if (user) {
     res.status(400).send('Error : 400 - Sorry, user already exists!');
     return;
@@ -163,8 +183,7 @@ app.post("/register", (req, res) => {
     password: hashedPassword,
   }
   users[userId] = newUser;
-  req.session["user_id"] = userId;
-  res.redirect("/urls" );
+  res.redirect("/urls");
 });
 
 
@@ -183,7 +202,7 @@ app.post('/login', (req, res) => {
 
 app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect("/urls");
+  res.redirect("/login");
 })
 
 // app.listen route---------------------------------------------------------------
