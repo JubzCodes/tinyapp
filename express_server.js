@@ -168,7 +168,6 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
   const user = findUserByEmail(email, users);
-  req.session["user_id"] = userId;
   if (email.length === 0 || password.length === 0) {
     res.status(400).send('Error : 400 - Email or Password is empty!');
     return;
@@ -183,6 +182,7 @@ app.post("/register", (req, res) => {
     password: hashedPassword,
   }
   users[userId] = newUser;
+  req.session["user_id"] = userId;
   res.redirect("/urls");
 });
 
@@ -190,13 +190,26 @@ app.post("/register", (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = authenticateUser(email, password, users);
-  if (user) {
-    req.session["user_id"] = user.id;
-    res.redirect('/urls');
-    return;
+  const userCheck = findUserByEmail(email, users);
+
+  if (userCheck) {
+
+    const user = authenticateUser(email, password, users);
+  
+    if (!email) {
+      return res.status(403).send("Error: 403 - You don't have permission to access this server. Email not found.");
+    } else {
+      if (!bcrypt.compareSync(password, user.password)) {
+        return res.status(403).send("Error: 403 - You don't have permission to access this server. Incorrect password.");
+      } else {
+        req.session["user_id"] = user.id;
+        return res.redirect("/urls");
+      }
+    }
   }
-  res.status(401).send('Error : 401 - Wrong credentials!. Email or Password Do Not Match');
+  return res.status(403).send("Error: 403 - You don't have permission to access this server. You need to register first!.");
+
+
 });
 
 
